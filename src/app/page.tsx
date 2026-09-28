@@ -1,25 +1,95 @@
+'use client';
+
 import Link from 'next/link';
-import { Users } from 'lucide-react';
+import { Users, Package, Database, ShieldCheck, ArrowRight } from 'lucide-react';
 
 export default function HomePage() {
-  return (
-    <main className="max-w-4xl mx-auto p-8 font-sans space-y-6">
-      <div className="border-b pb-4">
-        <h1 className="text-3xl font-bold text-gray-900">Base de Datos otzo_db</h1>
-        <p className="mt-2 text-gray-600">
-          Panel de administración y control conectado a TiDB Cloud.
-        </p>
-      </div>
+  const modulos = [
+    {
+      titulo: 'Gestión de Usuarios',
+      descripcion: 'Administración de credenciales, roles, asignación de permisos y estados de cuenta.',
+      icono: Users,
+      ruta: '/usuarios',
+      badge: 'Activo',
+      colorBadge: 'bg-[#52644f] text-[#f2e9e4]',
+    },
+    {
+      titulo: 'Catálogo de Productos',
+      descripcion: 'Control de inventario, precios, categorización y consulta de existencias.',
+      icono: Package,
+      ruta: '/productos',
+      badge: 'Siguiente Módulo',
+      colorBadge: 'bg-[#775040] text-[#c8c88d]',
+    },
+    {
+      titulo: 'Respaldos y Sistema',
+      descripcion: 'Monitoreo de snapshots de TiDB Cloud, logs de auditoría y copias de seguridad.',
+      icono: Database,
+      ruta: '/respaldos',
+      badge: 'Siguiente Módulo',
+      colorBadge: 'bg-[#775040] text-[#c8c88d]',
+    },
+  ];
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Link className="p-6 border rounded-xl hover:border-blue-500 hover:shadow-md transition bg-white block group" href="/usuarios">
-          <Users className="w-8 h-8 text-blue-600 mb-2 group-hover:scale-105 transition-transform"/>
-          <h2 className="text-xl font-semibold text-gray-800">Gestión de Usuarios</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Administración de cuentas, roles y estados de los usuarios del sistema.
+  return (
+    <div className="min-h-screen bg-[#332f2e] text-[#f2e9e4] p-6 font-sans flex items-center justify-center">
+      <div className="max-w-5xl w-full space-y-10 my-auto">
+
+        {/* Encabezado Principal */}
+        <div className="text-center space-y-3">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#52644f]/40 text-[#c8c88d] border border-[#52644f]">
+            <ShieldCheck className="w-4 h-4" /> otzo-web v1.0
+          </span>
+          <h1 className="text-4xl font-extrabold text-[#d48b5e] tracking-tight">
+            Panel de Administración OTZO
+          </h1>
+          <p className="text-sm text-[#c8c88d] opacity-90 max-w-xl mx-auto leading-relaxed">
+            Plataforma centralizada para la gestión de usuarios, catálogo de productos y respaldos de la base de datos.
           </p>
-        </Link>
+        </div>
+
+        {/* Tarjetas de Módulos (Sección Central) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {modulos.map((m, idx) => {
+            const Icono = m.icono;
+            return (
+              <div
+                key={idx}
+                className="bg-[#423b3a] border border-[#775040] rounded-xl p-6 shadow-xl flex flex-col justify-between hover:border-[#d48b5e] transition-all group"
+              >
+                <div className="space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div className="p-3 bg-[#332f2e] rounded-xl text-[#d48b5e] border border-[#775040] group-hover:bg-[#52644f] group-hover:text-[#f2e9e4] transition-colors">
+                      <Icono className="w-6 h-6" />
+                    </div>
+                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${m.colorBadge}`}>
+                      {m.badge}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h2 className="text-lg font-bold text-[#f2e9e4] group-hover:text-[#d48b5e] transition-colors">
+                      {m.titulo}
+                    </h2>
+                    <p className="text-xs text-[#c8c88d] opacity-80 mt-1 leading-relaxed">
+                      {m.descripcion}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-6 mt-4 border-t border-[#775040]/40">
+                  <Link
+                    href={m.ruta}
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-[#d48b5e] hover:text-[#f2e9e4] transition-colors"
+                  >
+                    Ingresar al módulo <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </main>
+    </div>
   );
 }
