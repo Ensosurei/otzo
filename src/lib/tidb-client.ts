@@ -1,31 +1,24 @@
-import DigestFetch from 'digest-fetch';
-
-const baseUrl = process.env.NEXT_PUBLIC_TIDB_ENDPOINT_URL || '';
-const publicKey = process.env.TIDB_PUBLIC_KEY || '';
-const privateKey = process.env.TIDB_PRIVATE_KEY || '';
-
-// Cliente con autenticación Digest para TiDB Data Service
-const client = new DigestFetch(publicKey, privateKey);
-
 export async function fetchTiDB<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const url = `${baseUrl}${path}`;
+  const method = options.method || 'GET';
+  const body = options.body ? JSON.parse(options.body as string) : undefined;
 
-  const defaultHeaders = {
-    'Content-Type': 'application/json',
-  };
-
-  const response = await client.fetch(url, {
-    ...options,
+  const response = await fetch('/api/tidb', {
+    method: 'POST',
     headers: {
-      ...defaultHeaders,
-      ...options.headers,
+      'Content-Type': 'application/json',
     },
+    body: JSON.stringify({
+      endpoint: path,
+      method,
+      body,
+    }),
   });
 
+  const data = await response.json();
+
   if (!response.ok) {
-    throw new Error(`Error en la petición TiDB [${response.status}]: ${response.statusText}`);
+    throw new Error(data.error || 'Error al comunicarse con TiDB');
   }
 
-  const data = await response.json();
-  return data.data?.rows || data;
+  return data as T;
 }
