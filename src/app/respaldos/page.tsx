@@ -6,7 +6,7 @@ import { fetchTiDB } from '@/lib/tidb-client';
 import { Database, Download, RefreshCw, AlertCircle, ShieldAlert, CheckCircle2, Coffee, ArrowLeft, Clock, User } from 'lucide-react';
 
 interface RespaldoLog {
-    id: number;
+    id?: number;
     administrador?: string;
     usuario_id?: number;
     nombre_archivo: string;
@@ -14,7 +14,7 @@ interface RespaldoLog {
 }
 
 export default function RespaldosPage() {
-    const [isAdmin, setIsAdmin] = useState<boolean>(true); 
+    const [isAdmin, setIsAdmin] = useState<boolean>(true);
     const [logs, setLogs] = useState<RespaldoLog[]>([]);
     const [cargando, setCargando] = useState<boolean>(true);
     const [generando, setGenerando] = useState<boolean>(false);
@@ -26,9 +26,9 @@ export default function RespaldosPage() {
         setError(null);
         try {
             const response: any = await fetchTiDB('/respaldos/log');
-            
-            const lista = Array.isArray(response) 
-                ? response 
+
+            const lista = Array.isArray(response)
+                ? response
                 : response?.data || response?.results || [];
 
             if (lista.length > 0) {
@@ -36,7 +36,6 @@ export default function RespaldosPage() {
             } else {
                 setLogs([
                     {
-                        id: 1,
                         administrador: "3XtGxQL8e7k2hoj.otzo_admin",
                         nombre_archivo: "respaldo_otzo_2026-09-28_seed.json",
                         fecha_respaldo: new Date().toISOString()
@@ -47,7 +46,6 @@ export default function RespaldosPage() {
             console.error("Aviso de conexión con TiDB:", err);
             setLogs([
                 {
-                    id: 1,
                     administrador: "3XtGxQL8e7k2hoj.otzo_admin",
                     nombre_archivo: "respaldo_otzo_2026-09-28_inicial.json",
                     fecha_respaldo: new Date().toISOString()
@@ -132,6 +130,7 @@ export default function RespaldosPage() {
 
     return (
         <div className="min-h-screen bg-[#F8F6F0] text-[#2B211B] font-['Plus_Jakarta_Sans',sans-serif]">
+            {/* Navbar Superior */}
             <header className="bg-[#2B211B] text-white shadow-md sticky top-0 z-30">
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-3 text-xl font-extrabold text-[#F4EBE1] hover:opacity-90 transition">
@@ -144,12 +143,15 @@ export default function RespaldosPage() {
                 </div>
             </header>
 
+            {/* Contenido Principal */}
             <main className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+                {/* Header de la Página */}
                 <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                     <div className="space-y-1">
                         <Link
                             href="/"
                             className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#6B7280] hover:text-[#6F4E37] transition-colors mb-1"
+                            title="Volver al menú principal"
                         >
                             <ArrowLeft className="w-3.5 h-3.5" /> Volver al Panel Principal
                         </Link>
@@ -170,7 +172,7 @@ export default function RespaldosPage() {
                             disabled={generando}
                             className="flex items-center gap-2 bg-[#6F4E37] hover:bg-[#563C2A] text-white font-bold px-4 py-2.5 rounded-lg text-sm transition shadow-sm disabled:opacity-50"
                         >
-                            <Download className="w-4 h-4" /> 
+                            <Download className="w-4 h-4" />
                             {generando ? 'Generando Respaldo...' : 'Realizar Respaldo Local'}
                         </button>
                     </div>
@@ -190,6 +192,7 @@ export default function RespaldosPage() {
                     </div>
                 )}
 
+                {/* Tabla de Historial sin columna de ID */}
                 <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
                     <div className="p-5 border-b border-[#E5E7EB] bg-[#FAF8F5] flex items-center justify-between">
                         <h3 className="font-extrabold text-[#2B211B] flex items-center gap-2">
@@ -213,7 +216,6 @@ export default function RespaldosPage() {
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="bg-[#FAF8F5] border-b border-[#E5E7EB] text-[11px] font-bold text-[#6B7280] uppercase tracking-wider">
-                                        <th className="p-4">ID</th>
                                         <th className="p-4">Administrador Responsable</th>
                                         <th className="p-4">Nombre del Archivo</th>
                                         <th className="p-4">Fecha y Hora</th>
@@ -221,25 +223,28 @@ export default function RespaldosPage() {
                                 </thead>
                                 <tbody className="divide-y divide-[#E5E7EB] text-sm">
                                     {logs.map((log, index) => (
-                                        <tr key={log.id || index} className="hover:bg-[#FAF8F5] transition-colors">
-                                            <td className="p-4 font-bold text-[#2B211B]">#{log.id || index + 1}</td>
-                                            <td className="p-4 flex items-center gap-2 text-[#1F2937] font-medium">
-                                                <User className="w-4 h-4 text-[#6F4E37]" />
-                                                {log.administrador || `Admin ID: ${log.usuario_id || 1}`}
+                                        <tr key={index} className="hover:bg-[#FAF8F5] transition-colors">
+                                            <td className="p-4 text-[#1F2937] font-medium">
+                                                <div className="flex items-center gap-2">
+                                                    <User className="w-4 h-4 text-[#6F4E37]" />
+                                                    {log.administrador || `Admin ID: ${log.usuario_id || 1}`}
+                                                </div>
                                             </td>
                                             <td className="p-4 font-mono text-xs text-[#6F4E37] font-semibold">
                                                 {log.nombre_archivo}
                                             </td>
-                                            <td className="p-4 text-[#6B7280] text-xs flex items-center gap-1.5">
-                                                <Clock className="w-3.5 h-3.5" />
-                                                {(() => {
-                                                    const fechaCruda = log.fecha_respaldo || new Date().toISOString();
-                                                    const fechaUTC = fechaCruda.endsWith('Z') || fechaCruda.includes('+') ? fechaCruda : fechaCruda.replace(' ', 'T') + 'Z';
-                                                    return new Date(fechaUTC).toLocaleString('es-MX', {
-                                                        dateStyle: 'short',
-                                                        timeStyle: 'medium'
-                                                    });
-                                                })()}
+                                            <td className="p-4 text-[#6B7280] text-xs">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Clock className="w-3.5 h-3.5 text-[#6B7280]" />
+                                                    {(() => {
+                                                        const fechaCruda = log.fecha_respaldo || new Date().toISOString();
+                                                        const fechaUTC = fechaCruda.endsWith('Z') || fechaCruda.includes('+') ? fechaCruda : fechaCruda.replace(' ', 'T') + 'Z';
+                                                        return new Date(fechaUTC).toLocaleString('es-MX', {
+                                                            dateStyle: 'short',
+                                                            timeStyle: 'medium'
+                                                        });
+                                                    })()}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
