@@ -3,18 +3,19 @@
 import { useEffect, useState, useMemo } from 'react';
 import { fetchTiDB } from '@/lib/tidb-client';
 import { Usuario, RolUsuario } from '@/types';
-import { UserPlus, Shield, CheckCircle2, XCircle, RefreshCw, Pencil, Trash2, X, Check, KeyRound, AlertCircle, Search, Filter } from 'lucide-react';
+// Reemplaza MugHot por Coffee
+import { UserPlus, CheckCircle2, XCircle, RefreshCw, Pencil, Trash2, X, Check, KeyRound, AlertCircle, Search, Filter, Coffee } from 'lucide-react';
 
 export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [cargando, setCargando] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Estados de Búsqueda y Filtro por Rol
+  // Filtros y Búsqueda
   const [busqueda, setBusqueda] = useState('');
   const [filtroRol, setFiltroRol] = useState<string>('TODOS');
 
-  // Formulario para nuevo usuario
+  // Formulario Crear
   const [nombre, setNombre] = useState('');
   const [correo, setCorreo] = useState('');
   const [username, setUsername] = useState('');
@@ -23,7 +24,7 @@ export default function UsuariosPage() {
   const [guardando, setGuardando] = useState(false);
   const [errorForm, setErrorForm] = useState<string | null>(null);
 
-  // Estado para edición
+  // Modal / Formulario Editar
   const [usuarioEditando, setUsuarioEditando] = useState<Usuario | null>(null);
   const [editNombre, setEditNombre] = useState('');
   const [editCorreo, setEditCorreo] = useState('');
@@ -33,6 +34,9 @@ export default function UsuariosPage() {
   const [editEstado, setEditEstado] = useState<'Activo' | 'Inactivo'>('Activo');
   const [actualizando, setActualizando] = useState(false);
   const [errorEditForm, setErrorEditForm] = useState<string | null>(null);
+
+  // Control de visibilidad del modal de creación
+  const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
 
   const cargarUsuarios = async () => {
     setCargando(true);
@@ -51,11 +55,8 @@ export default function UsuariosPage() {
     cargarUsuarios();
   }, []);
 
-  const esCorreoValido = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
+  const esCorreoValido = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  // Filtrado de usuarios según búsqueda de coincidencias y rol seleccionado
   const usuariosFiltrados = useMemo(() => {
     return usuarios.filter((u) => {
       const termino = busqueda.toLowerCase().trim();
@@ -81,7 +82,7 @@ export default function UsuariosPage() {
     }
 
     if (!esCorreoValido(correo.trim())) {
-      setErrorForm('Por favor, ingresa un correo electrónico válido.');
+      setErrorForm('Ingresa un correo electrónico válido.');
       return;
     }
 
@@ -98,19 +99,19 @@ export default function UsuariosPage() {
           nombre: nombre.trim(),
           correo: correo.trim(),
           username: username.trim(),
-          password: password,
+          password,
           rol,
-          estado: 'Activo'
+          estado: 'Activo',
         }),
       });
       setNombre('');
       setCorreo('');
       setUsername('');
       setPassword('');
-      setErrorForm(null);
+      setMostrarModalCrear(false);
       cargarUsuarios();
     } catch (err: any) {
-      setErrorForm(err.message || 'Error al guardar el usuario.');
+      setErrorForm(err.message || 'Error al guardar usuario.');
     } finally {
       setGuardando(false);
     }
@@ -133,17 +134,17 @@ export default function UsuariosPage() {
     setErrorEditForm(null);
 
     if (!editNombre.trim() || !editCorreo.trim() || !editUsername.trim()) {
-      setErrorEditForm('Nombre, correo y username no pueden estar vacíos.');
+      setErrorEditForm('Nombre, correo y username son requeridos.');
       return;
     }
 
     if (!esCorreoValido(editCorreo.trim())) {
-      setErrorEditForm('Por favor, ingresa un correo electrónico válido.');
+      setErrorEditForm('Ingresa un correo electrónico válido.');
       return;
     }
 
     if (editPassword && editPassword.length < 6) {
-      setErrorEditForm('Si cambias la contraseña, debe tener al menos 6 caracteres.');
+      setErrorEditForm('La contraseña debe tener al menos 6 caracteres.');
       return;
     }
 
@@ -175,69 +176,75 @@ export default function UsuariosPage() {
   };
 
   const handleEliminar = async (id: number | string, nombreUsuario: string) => {
-    if (!confirm(`¿Estás seguro de que deseas eliminar al usuario "${nombreUsuario}"?`)) {
-      return;
-    }
+    if (!confirm(`¿Estás seguro de eliminar a "${nombreUsuario}"?`)) return;
     try {
-      await fetchTiDB(`/usuarios/${id}`, {
-        method: 'DELETE',
-      });
+      await fetchTiDB(`/usuarios/${id}`, { method: 'DELETE' });
       cargarUsuarios();
     } catch (err: any) {
-      alert('Error al eliminar usuario: ' + err.message);
+      alert('Error al eliminar: ' + err.message);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#332f2e] text-[#f2e9e4] p-6 font-sans">
-      <div className="max-w-6xl mx-auto space-y-8">
-
-        {/* Encabezado */}
-        <div className="flex justify-between items-center border-b border-[#775040] pb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-[#d48b5e] flex items-center gap-2">
-              <Shield className="w-6 h-6 text-[#c8c88d]" /> Control de Usuarios
-            </h1>
-            <p className="text-sm text-[#c8c88d] opacity-80 mt-1">
-              Gestión de accesos, credenciales y permisos del sistema otzo_db
-            </p>
+    <div className="min-h-screen bg-[#F8F6F0] text-[#2B211B] font-['Plus_Jakarta_Sans',sans-serif]">
+      {/* Navbar Superior */}
+      <header className="bg-[#2B211B] text-white shadow-md sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3 text-xl font-extrabold text-[#F4EBE1]">
+            <Coffee className="w-6 h-6 text-[#D2B48C]" />
+            <span>Cafeteria Otzo</span>
           </div>
-          <button
-            onClick={cargarUsuarios}
-            className="flex items-center gap-2 text-sm bg-[#52644f] hover:bg-[#52644f]/80 text-[#f2e9e4] px-4 py-2 rounded-lg transition"
-          >
-            <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} />
-            Actualizar
-          </button>
+          <div className="flex items-center gap-4 text-sm font-semibold text-[#D1D5DB]">
+            <span className="bg-white/10 px-3 py-1 rounded-full border border-white/10">Admin</span>
+          </div>
+        </div>
+      </header>
+
+      {/* Contenido Principal */}
+      <main className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+        {/* Header de la página */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-extrabold text-[#2B211B]">Gestión de Usuarios</h1>
+            <p className="text-xs text-[#6B7280] mt-1">Administra las cuentas y roles del personal de la cafetería</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={cargarUsuarios}
+              className="p-2.5 rounded-lg border border-[#E5E7EB] bg-white text-[#2B211B] hover:bg-[#F3F4F6] transition shadow-sm"
+              title="Actualizar datos"
+            >
+              <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} />
+            </button>
+            <button
+              onClick={() => setMostrarModalCrear(true)}
+              className="flex items-center gap-2 bg-[#6F4E37] hover:bg-[#563C2A] text-white font-bold px-4 py-2.5 rounded-lg text-sm transition shadow-sm"
+            >
+              <UserPlus className="w-4 h-4" /> Añadir Usuario
+            </button>
+          </div>
         </div>
 
-        {/* Barra de Búsqueda de Coincidencias y Filtro por Rol */}
-        <div className="bg-[#423b3a] border border-[#775040] p-4 rounded-xl shadow-lg flex flex-col md:flex-row gap-4 items-center justify-between">
+        {/* Filtros y Búsqueda */}
+        <div className="bg-white p-4 rounded-xl border border-[#E5E7EB] shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
           <div className="relative w-full md:w-2/3">
+            <Search className="w-4 h-4 text-[#6B7280] absolute left-3 top-3" />
             <input
               type="text"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar por nombre, usuario (@username) o correo..."
-              className="w-full rounded-lg bg-[#332f2e] border border-[#775040] pl-9 pr-3 py-2 text-sm text-[#f2e9e4] focus:outline-none focus:border-[#d48b5e]"
+              placeholder="Buscar por nombre, correo o @usuario..."
+              className="w-full pl-9 pr-3 py-2 text-sm bg-[#F8F6F0] border border-[#E5E7EB] rounded-lg outline-none focus:border-[#6F4E37] text-[#2B211B]"
             />
-            <Search className="w-4 h-4 text-[#c8c88d] absolute left-3 top-2.5 opacity-60" />
-            {busqueda && (
-              <button
-                onClick={() => setBusqueda('')}
-                className="absolute right-3 top-2.5 text-xs text-[#c8c88d] hover:text-[#f2e9e4]"
-              >
-                Limpiar
-              </button>
-            )}
           </div>
 
           <div className="flex items-center gap-2 w-full md:w-auto">
-            <Filter className="w-4 h-4 text-[#c8c88d]" />
+            <Filter className="w-4 h-4 text-[#6B7280]" />
             <select
               value={filtroRol}
               onChange={(e) => setFiltroRol(e.target.value)}
-              className="w-full md:w-auto rounded-lg bg-[#332f2e] border border-[#775040] px-3 py-2 text-sm text-[#f2e9e4] focus:outline-none focus:border-[#d48b5e]"
+              className="w-full md:w-auto px-3 py-2 text-sm bg-[#F8F6F0] border border-[#E5E7EB] rounded-lg outline-none focus:border-[#6F4E37] text-[#2B211B] font-medium"
             >
               <option value="TODOS">Todos los Roles</option>
               <option value="Administrador">Administrador</option>
@@ -247,281 +254,283 @@ export default function UsuariosPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-          {/* Formulario de registro / edición */}
-          <div className="bg-[#423b3a] border border-[#775040] p-6 rounded-xl shadow-lg h-fit">
-            {usuarioEditando ? (
-              <>
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold flex items-center gap-2 text-[#d48b5e]">
-                    <Pencil className="w-5 h-5 text-[#c8c88d]" /> Editar Usuario
-                  </h2>
-                  <button
-                    onClick={() => setUsuarioEditando(null)}
-                    className="text-[#c8c88d] hover:text-[#f2e9e4] p-1"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {errorEditForm && (
-                  <div className="mb-4 p-3 bg-red-950/60 border border-red-800/80 rounded-lg text-xs text-red-200 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{errorEditForm}</span>
-                  </div>
-                )}
-
-                <form onSubmit={handleActualizar} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#c8c88d] uppercase mb-1">Nombre</label>
-                    <input
-                      type="text"
-                      value={editNombre}
-                      onChange={(e) => setEditNombre(e.target.value)}
-                      className="w-full rounded-lg bg-[#332f2e] border border-[#775040] px-3 py-2 text-sm text-[#f2e9e4] focus:outline-none focus:border-[#d48b5e]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#c8c88d] uppercase mb-1">Correo</label>
-                    <input
-                      type="email"
-                      value={editCorreo}
-                      onChange={(e) => setEditCorreo(e.target.value)}
-                      className="w-full rounded-lg bg-[#332f2e] border border-[#775040] px-3 py-2 text-sm text-[#f2e9e4] focus:outline-none focus:border-[#d48b5e]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#c8c88d] uppercase mb-1">Username</label>
-                    <input
-                      type="text"
-                      value={editUsername}
-                      onChange={(e) => setEditUsername(e.target.value)}
-                      className="w-full rounded-lg bg-[#332f2e] border border-[#775040] px-3 py-2 text-sm text-[#f2e9e4] focus:outline-none focus:border-[#d48b5e]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#c8c88d] uppercase mb-1">
-                      Nueva Contraseña <span className="text-[10px] text-[#c8c88d]/60 font-normal">(Opcional)</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="password"
-                        value={editPassword}
-                        onChange={(e) => setEditPassword(e.target.value)}
-                        className="w-full rounded-lg bg-[#332f2e] border border-[#775040] px-3 py-2 pl-9 text-sm text-[#f2e9e4] focus:outline-none focus:border-[#d48b5e]"
-                        placeholder="Dejar en blanco para conservar"
-                      />
-                      <KeyRound className="w-4 h-4 text-[#c8c88d] absolute left-2.5 top-2.5 opacity-60" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#c8c88d] uppercase mb-1">Rol</label>
-                    <select
-                      value={editRol}
-                      onChange={(e) => setEditRol(e.target.value as RolUsuario)}
-                      className="w-full rounded-lg bg-[#332f2e] border border-[#775040] px-3 py-2 text-sm text-[#f2e9e4] focus:outline-none focus:border-[#d48b5e]"
-                    >
-                      <option value="Administrador">Administrador</option>
-                      <option value="Capturista">Capturista</option>
-                      <option value="Auditor">Auditor</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#c8c88d] uppercase mb-1">Estado</label>
-                    <select
-                      value={editEstado}
-                      onChange={(e) => setEditEstado(e.target.value as 'Activo' | 'Inactivo')}
-                      className="w-full rounded-lg bg-[#332f2e] border border-[#775040] px-3 py-2 text-sm text-[#f2e9e4] focus:outline-none focus:border-[#d48b5e]"
-                    >
-                      <option value="Activo">Activo</option>
-                      <option value="Inactivo">Inactivo</option>
-                    </select>
-                  </div>
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      type="submit"
-                      disabled={actualizando}
-                      className="flex-1 bg-[#d48b5e] hover:bg-[#d48b5e]/80 text-[#332f2e] font-bold py-2 rounded-lg text-sm transition disabled:opacity-50 flex justify-center items-center gap-1"
-                    >
-                      <Check className="w-4 h-4" /> {actualizando ? 'Guardando...' : 'Actualizar'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setUsuarioEditando(null)}
-                      className="bg-[#332f2e] hover:bg-[#332f2e]/70 text-[#c8c88d] font-semibold py-2 px-3 rounded-lg text-sm transition border border-[#775040]"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </form>
-              </>
-            ) : (
-              <>
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#d48b5e]">
-                  <UserPlus className="w-5 h-5 text-[#c8c88d]" /> Registrar Usuario
-                </h2>
-
-                {errorForm && (
-                  <div className="mb-4 p-3 bg-red-950/60 border border-red-800/80 rounded-lg text-xs text-red-200 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{errorForm}</span>
-                  </div>
-                )}
-
-                <form onSubmit={handleCrear} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#c8c88d] uppercase mb-1">Nombre</label>
-                    <input
-                      type="text"
-                      value={nombre}
-                      onChange={(e) => setNombre(e.target.value)}
-                      className="w-full rounded-lg bg-[#332f2e] border border-[#775040] px-3 py-2 text-sm text-[#f2e9e4] focus:outline-none focus:border-[#d48b5e]"
-                      placeholder="Ej. Carlos Mendoza"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#c8c88d] uppercase mb-1">Correo</label>
-                    <input
-                      type="email"
-                      value={correo}
-                      onChange={(e) => setCorreo(e.target.value)}
-                      className="w-full rounded-lg bg-[#332f2e] border border-[#775040] px-3 py-2 text-sm text-[#f2e9e4] focus:outline-none focus:border-[#d48b5e]"
-                      placeholder="carlos@otzo.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#c8c88d] uppercase mb-1">Username</label>
-                    <input
-                      type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="w-full rounded-lg bg-[#332f2e] border border-[#775040] px-3 py-2 text-sm text-[#f2e9e4] focus:outline-none focus:border-[#d48b5e]"
-                      placeholder="cmendoza"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#c8c88d] uppercase mb-1">Contraseña</label>
-                    <div className="relative">
-                      <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full rounded-lg bg-[#332f2e] border border-[#775040] px-3 py-2 pl-9 text-sm text-[#f2e9e4] focus:outline-none focus:border-[#d48b5e]"
-                        placeholder="Mínimo 6 caracteres"
-                      />
-                      <KeyRound className="w-4 h-4 text-[#c8c88d] absolute left-2.5 top-2.5 opacity-60" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#c8c88d] uppercase mb-1">Rol</label>
-                    <select
-                      value={rol}
-                      onChange={(e) => setRol(e.target.value as RolUsuario)}
-                      className="w-full rounded-lg bg-[#332f2e] border border-[#775040] px-3 py-2 text-sm text-[#f2e9e4] focus:outline-none focus:border-[#d48b5e]"
-                    >
-                      <option value="Administrador">Administrador</option>
-                      <option value="Capturista">Capturista</option>
-                      <option value="Auditor">Auditor</option>
-                    </select>
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={guardando}
-                    className="w-full bg-[#d48b5e] hover:bg-[#d48b5e]/80 text-[#332f2e] font-bold py-2 rounded-lg text-sm transition mt-2 disabled:opacity-50"
-                  >
-                    {guardando ? 'Guardando...' : 'Guardar Usuario'}
-                  </button>
-                </form>
-              </>
-            )}
-          </div>
-
-          {/* Tabla de Usuarios Filtrados */}
-          <div className="lg:col-span-2 bg-[#423b3a] border border-[#775040] rounded-xl shadow-lg overflow-hidden">
-            <div className="p-4 border-b border-[#775040] bg-[#332f2e]/50 flex justify-between items-center">
-              <h2 className="font-semibold text-[#d48b5e]">Usuarios Registrados</h2>
-              <span className="text-xs text-[#c8c88d] opacity-75">
-                {usuariosFiltrados.length} resultado(s)
-              </span>
+        {/* Tabla CRUD */}
+        <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+          {cargando ? (
+            <div className="p-12 text-center text-[#6B7280] text-sm animate-pulse">
+              Cargando usuarios...
             </div>
-
-            {cargando ? (
-              <div className="p-8 text-center text-[#c8c88d] text-sm animate-pulse">
-                Cargando usuarios desde TiDB Cloud...
-              </div>
-            ) : error ? (
-              <div className="p-8 text-center text-[#d48b5e] text-sm">
-                <p>Ocurrió un error al cargar la información.</p>
-                <p className="text-xs opacity-75 mt-1">{error}</p>
-              </div>
-            ) : usuariosFiltrados.length === 0 ? (
-              <div className="p-8 text-center text-[#c8c88d] opacity-60 text-sm">
-                No se encontraron usuarios con ese criterio de búsqueda o filtro.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-[#775040] bg-[#332f2e]/40 text-xs font-semibold text-[#c8c88d] uppercase">
-                      <th className="p-3">Usuario</th>
-                      <th className="p-3">Contacto</th>
-                      <th className="p-3">Rol</th>
-                      <th className="p-3">Estado</th>
-                      <th className="p-3 text-right">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#775040]/40 text-sm">
-                    {usuariosFiltrados.map((u) => (
-                      <tr key={u.id} className="hover:bg-[#332f2e]/30 transition">
-                        <td className="p-3">
-                          <div className="font-medium text-[#f2e9e4]">{u.nombre}</div>
-                          <div className="text-xs text-[#c8c88d] opacity-80">@{u.username}</div>
-                        </td>
-                        <td className="p-3 text-[#f2e9e4] opacity-90">{u.correo}</td>
-                        <td className="p-3">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#52644f] text-[#f2e9e4]">
-                            {u.rol}
+          ) : error ? (
+            <div className="p-12 text-center text-[#EF4444] text-sm">
+              <p className="font-bold">Error de conexión</p>
+              <p className="text-xs text-[#6B7280] mt-1">{error}</p>
+            </div>
+          ) : usuariosFiltrados.length === 0 ? (
+            <div className="p-12 text-center text-[#6B7280] text-sm">
+              No se encontraron coincidencias para la búsqueda.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-[#FAF8F5] border-b border-[#E5E7EB] text-[11px] font-bold text-[#6B7280] uppercase tracking-wider">
+                    <th className="p-4">Usuario</th>
+                    <th className="p-4">Contacto</th>
+                    <th className="p-4">Rol</th>
+                    <th className="p-4">Estado</th>
+                    <th className="p-4 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E5E7EB] text-sm">
+                  {usuariosFiltrados.map((u) => (
+                    <tr key={u.id} className="hover:bg-[#FAF8F5] transition-colors">
+                      <td className="p-4">
+                        <div className="font-bold text-[#2B211B]">{u.nombre}</div>
+                        <div className="text-xs text-[#6B7280]">@{u.username}</div>
+                      </td>
+                      <td className="p-4 text-[#1F2937]">{u.correo}</td>
+                      <td className="p-4">
+                        <span className="inline-block bg-[#F3F4F6] text-[#1F2937] px-3 py-1 rounded-full text-xs font-semibold">
+                          {u.rol}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        {u.estado === 'Activo' ? (
+                          <span className="inline-flex items-center gap-1.5 bg-[#D1FAE5] text-[#065F46] px-3 py-1 rounded-full text-xs font-bold">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Disponible
                           </span>
-                        </td>
-                        <td className="p-3">
-                          {u.estado === 'Activo' ? (
-                            <span className="inline-flex items-center gap-1 text-xs text-[#c8c88d] font-medium">
-                              <CheckCircle2 className="w-3.5 h-3.5" /> Activo
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-xs text-[#d48b5e] font-medium opacity-80">
-                              <XCircle className="w-3.5 h-3.5" /> Inactivo
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-3 text-right">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => abrirEdicion(u)}
-                              title="Editar usuario"
-                              className="p-1.5 rounded-lg bg-[#332f2e] hover:bg-[#52644f] text-[#c8c88d] hover:text-[#f2e9e4] transition border border-[#775040]"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleEliminar(u.id, u.nombre)}
-                              title="Eliminar usuario"
-                              className="p-1.5 rounded-lg bg-[#332f2e] hover:bg-red-900/60 text-[#d48b5e] hover:text-red-200 transition border border-[#775040]"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 bg-[#FEE2E2] text-[#991B1B] px-3 py-1 rounded-full text-xs font-bold">
+                            <XCircle className="w-3.5 h-3.5" /> Inactivo
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => abrirEdicion(u)}
+                            className="p-2 rounded-lg bg-[#F4EBE1] text-[#6F4E37] hover:bg-[#6F4E37] hover:text-white transition"
+                            title="Editar"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEliminar(u.id, u.nombre)}
+                            className="p-2 rounded-lg bg-[#FEE2E2] text-[#EF4444] hover:bg-[#EF4444] hover:text-white transition"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Modal Crear Usuario */}
+      {mostrarModalCrear && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150">
+            <div className="p-5 border-b border-[#E5E7EB] flex justify-between items-center bg-[#FAF8F5]">
+              <h3 className="font-extrabold text-[#2B211B] flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-[#6F4E37]" /> Añadir Nuevo Usuario
+              </h3>
+              <button onClick={() => setMostrarModalCrear(false)} className="text-[#6B7280] hover:text-[#2B211B]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleCrear} className="p-5 space-y-4">
+              {errorForm && (
+                <div className="p-3 bg-[#FEE2E2] text-[#991B1B] text-xs rounded-lg flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{errorForm}</span>
+                </div>
+              )}
+              <div>
+                <label className="block text-xs font-bold text-[#2B211B] mb-1">Nombre Completo</label>
+                <input
+                  type="text"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  className="w-full p-2.5 text-sm border border-[#E5E7EB] rounded-lg outline-none focus:border-[#6F4E37]"
+                  placeholder="Ej. Carlos Mendoza"
+                />
               </div>
-            )}
+              <div>
+                <label className="block text-xs font-bold text-[#2B211B] mb-1">Correo Electrónico</label>
+                <input
+                  type="email"
+                  value={correo}
+                  onChange={(e) => setCorreo(e.target.value)}
+                  className="w-full p-2.5 text-sm border border-[#E5E7EB] rounded-lg outline-none focus:border-[#6F4E37]"
+                  placeholder="carlos@otzo.com"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#2B211B] mb-1">Nombre de Usuario</label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full p-2.5 text-sm border border-[#E5E7EB] rounded-lg outline-none focus:border-[#6F4E37]"
+                  placeholder="cmendoza"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#2B211B] mb-1">Contraseña</label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full p-2.5 pl-9 text-sm border border-[#E5E7EB] rounded-lg outline-none focus:border-[#6F4E37]"
+                    placeholder="Mínimo 6 caracteres"
+                  />
+                  <KeyRound className="w-4 h-4 text-[#6B7280] absolute left-3 top-3" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#2B211B] mb-1">Rol</label>
+                <select
+                  value={rol}
+                  onChange={(e) => setRol(e.target.value as RolUsuario)}
+                  className="w-full p-2.5 text-sm border border-[#E5E7EB] rounded-lg outline-none focus:border-[#6F4E37]"
+                >
+                  <option value="Administrador">Administrador</option>
+                  <option value="Capturista">Capturista</option>
+                  <option value="Auditor">Auditor</option>
+                </select>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setMostrarModalCrear(false)}
+                  className="flex-1 py-2.5 border border-[#E5E7EB] rounded-lg text-sm font-bold text-[#2B211B] hover:bg-[#F3F4F6]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={guardando}
+                  className="flex-1 py-2.5 bg-[#6F4E37] hover:bg-[#563C2A] text-white rounded-lg text-sm font-bold transition disabled:opacity-50"
+                >
+                  {guardando ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Modal Editar Usuario */}
+      {usuarioEditando && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150">
+            <div className="p-5 border-b border-[#E5E7EB] flex justify-between items-center bg-[#FAF8F5]">
+              <h3 className="font-extrabold text-[#2B211B] flex items-center gap-2">
+                <Pencil className="w-5 h-5 text-[#6F4E37]" /> Editar Usuario
+              </h3>
+              <button onClick={() => setUsuarioEditando(null)} className="text-[#6B7280] hover:text-[#2B211B]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleActualizar} className="p-5 space-y-4">
+              {errorEditForm && (
+                <div className="p-3 bg-[#FEE2E2] text-[#991B1B] text-xs rounded-lg flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{errorEditForm}</span>
+                </div>
+              )}
+              <div>
+                <label className="block text-xs font-bold text-[#2B211B] mb-1">Nombre Completo</label>
+                <input
+                  type="text"
+                  value={editNombre}
+                  onChange={(e) => setEditNombre(e.target.value)}
+                  className="w-full p-2.5 text-sm border border-[#E5E7EB] rounded-lg outline-none focus:border-[#6F4E37]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#2B211B] mb-1">Correo Electrónico</label>
+                <input
+                  type="email"
+                  value={editCorreo}
+                  onChange={(e) => setEditCorreo(e.target.value)}
+                  className="w-full p-2.5 text-sm border border-[#E5E7EB] rounded-lg outline-none focus:border-[#6F4E37]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#2B211B] mb-1">Nombre de Usuario</label>
+                <input
+                  type="text"
+                  value={editUsername}
+                  onChange={(e) => setEditUsername(e.target.value)}
+                  className="w-full p-2.5 text-sm border border-[#E5E7EB] rounded-lg outline-none focus:border-[#6F4E37]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#2B211B] mb-1">
+                  Nueva Contraseña <span className="font-normal text-[#6B7280]">(Opcional)</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    value={editPassword}
+                    onChange={(e) => setEditPassword(e.target.value)}
+                    className="w-full p-2.5 pl-9 text-sm border border-[#E5E7EB] rounded-lg outline-none focus:border-[#6F4E37]"
+                    placeholder="Dejar en blanco para conservar"
+                  />
+                  <KeyRound className="w-4 h-4 text-[#6B7280] absolute left-3 top-3" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#2B211B] mb-1">Rol</label>
+                <select
+                  value={editRol}
+                  onChange={(e) => setEditRol(e.target.value as RolUsuario)}
+                  className="w-full p-2.5 text-sm border border-[#E5E7EB] rounded-lg outline-none focus:border-[#6F4E37]"
+                >
+                  <option value="Administrador">Administrador</option>
+                  <option value="Capturista">Capturista</option>
+                  <option value="Auditor">Auditor</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#2B211B] mb-1">Estado</label>
+                <select
+                  value={editEstado}
+                  onChange={(e) => setEditEstado(e.target.value as 'Activo' | 'Inactivo')}
+                  className="w-full p-2.5 text-sm border border-[#E5E7EB] rounded-lg outline-none focus:border-[#6F4E37]"
+                >
+                  <option value="Activo">Disponible (Activo)</option>
+                  <option value="Inactivo">Inactivo</option>
+                </select>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setUsuarioEditando(null)}
+                  className="flex-1 py-2.5 border border-[#E5E7EB] rounded-lg text-sm font-bold text-[#2B211B] hover:bg-[#F3F4F6]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={actualizando}
+                  className="flex-1 py-2.5 bg-[#6F4E37] hover:bg-[#563C2A] text-white rounded-lg text-sm font-bold transition disabled:opacity-50 flex items-center justify-center gap-1"
+                >
+                  <Check className="w-4 h-4" /> {actualizando ? 'Guardando...' : 'Actualizar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
