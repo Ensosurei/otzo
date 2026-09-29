@@ -13,7 +13,7 @@ Interfaz administrativa para la gestión de la **Cafetería Otzo**. El proyecto 
 Actualmente estamos construyendo los módulos principales del sistema bajo la misma identidad visual:
 
 - [x] **Gestión de Usuarios:** CRUD completo (creación en modal, edición, eliminación), búsqueda en tiempo real (por nombre, `@username` o correo) y filtrado por roles.
-- [ ] **Catálogo de Productos:** En maquetación e integración.
+- [x] **Catálogo de Productos:** En maquetación e integración.
 - [ ] **Respaldos y Sistema:** Pendiente de desarrollo.
 
 ---
