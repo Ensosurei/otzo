@@ -26,8 +26,8 @@ export default function HomePage() {
       descripcion: 'Monitoreo de snapshots de TiDB Cloud, logs de auditoría y copias de seguridad.',
       icono: Database,
       ruta: '/respaldos',
-      badge: 'Próximamente',
-      colorBadge: 'bg-[#FEF3C7] text-[#92400E]',
+      badge: 'Disponible',
+      colorBadge: 'bg-[#D1FAE5] text-[#065F46]',
     },
   ];
 
