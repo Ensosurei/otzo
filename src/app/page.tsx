@@ -18,8 +18,8 @@ export default function HomePage() {
       descripcion: 'Control de inventario, precios, categorización y consulta de existencias.',
       icono: Package,
       ruta: '/productos',
-      badge: 'Próximamente',
-      colorBadge: 'bg-[#FEF3C7] text-[#92400E]',
+      badge: 'Disponible',
+      colorBadge: 'bg-[#D1FAE5] text-[#065F46]',
     },
     {
       titulo: 'Respaldos y Sistema',
