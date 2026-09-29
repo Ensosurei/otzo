@@ -24,8 +24,8 @@ Actualmente estamos construyendo los módulos principales del sistema bajo la mi
 Si deseas clonar y probar el avance del proyecto localmente:
 
 1. **Clonar el repositorio:**  
-   `git clone https://github.com/Ensosurei/otzo-web.git`  
-   `cd otzo-web`
+   `git clone https://github.com/Ensosurei/otzo.git`  
+   `cd otzo`
 
 2. **Instalar dependencias:**  
    `npm install`
