@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import Link from 'next/link';
 import { fetchTiDB } from '@/lib/tidb-client';
 import { Usuario, RolUsuario } from '@/types';
-// Reemplaza MugHot por Coffee
-import { UserPlus, CheckCircle2, XCircle, RefreshCw, Pencil, Trash2, X, Check, KeyRound, AlertCircle, Search, Filter, Coffee } from 'lucide-react';
+import { UserPlus, CheckCircle2, XCircle, RefreshCw, Pencil, Trash2, X, Check, KeyRound, AlertCircle, Search, Filter, Coffee, ArrowLeft } from 'lucide-react';
 
 export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -190,10 +190,10 @@ export default function UsuariosPage() {
       {/* Navbar Superior */}
       <header className="bg-[#2B211B] text-white shadow-md sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3 text-xl font-extrabold text-[#F4EBE1]">
+          <Link href="/" className="flex items-center gap-3 text-xl font-extrabold text-[#F4EBE1] hover:opacity-90 transition">
             <Coffee className="w-6 h-6 text-[#D2B48C]" />
             <span>Cafeteria Otzo</span>
-          </div>
+          </Link>
           <div className="flex items-center gap-4 text-sm font-semibold text-[#D1D5DB]">
             <span className="bg-white/10 px-3 py-1 rounded-full border border-white/10">Admin</span>
           </div>
@@ -203,10 +203,17 @@ export default function UsuariosPage() {
       {/* Contenido Principal */}
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-6">
         {/* Header de la página */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-extrabold text-[#2B211B]">Gestión de Usuarios</h1>
-            <p className="text-xs text-[#6B7280] mt-1">Administra las cuentas y roles del personal de la cafetería</p>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div className="space-y-1">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#6B7280] hover:text-[#6F4E37] transition-colors mb-1"
+              title="Volver al menú principal"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> Volver al Panel Principal
+            </Link>
+            <h1 className="text-2xl font-extrabold text-[#2B211B] leading-none">Gestión de Usuarios</h1>
+            <p className="text-xs text-[#6B7280]">Administra las cuentas y roles del personal de la cafetería</p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -335,7 +342,7 @@ export default function UsuariosPage() {
       {/* Modal Crear Usuario */}
       {mostrarModalCrear && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150 font-['Plus_Jakarta_Sans',sans-serif]">
             <div className="p-5 border-b border-[#E5E7EB] flex justify-between items-center bg-[#FAF8F5]">
               <h3 className="font-extrabold text-[#2B211B] flex items-center gap-2">
                 <UserPlus className="w-5 h-5 text-[#6F4E37]" /> Añadir Nuevo Usuario
@@ -430,7 +437,7 @@ export default function UsuariosPage() {
       {/* Modal Editar Usuario */}
       {usuarioEditando && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150 font-['Plus_Jakarta_Sans',sans-serif]">
             <div className="p-5 border-b border-[#E5E7EB] flex justify-between items-center bg-[#FAF8F5]">
               <h3 className="font-extrabold text-[#2B211B] flex items-center gap-2">
                 <Pencil className="w-5 h-5 text-[#6F4E37]" /> Editar Usuario
