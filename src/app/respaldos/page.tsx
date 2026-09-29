@@ -138,7 +138,7 @@ export default function RespaldosPage() {
                         <span>Cafeteria Otzo</span>
                     </Link>
                     <div className="flex items-center gap-4 text-sm font-semibold text-[#D1D5DB]">
-                        <span className="bg-white/10 px-3 py-1 rounded-full border border-white/10">Admin (Respaldos)</span>
+                        <span className="bg-white/10 px-3 py-1 rounded-full border border-white/10">Admin</span>
                     </div>
                 </div>
             </header>
