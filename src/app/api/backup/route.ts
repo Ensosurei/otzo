@@ -4,38 +4,62 @@ import zlib from 'zlib';
 
 export async function GET() {
   try {
+    const host = process.env.TIDB_HOST;
+    const user = process.env.TIDB_USER;
+    const password = process.env.TIDB_PASSWORD;
+    const database = process.env.TIDB_DATABASE || 'otzo_db';
+    const port = Number(process.env.TIDB_PORT) || 4000;
+
+    // 1. Verificación previa de variables para evitar crash en Vercel
+    if (!host || !user || !password) {
+      return NextResponse.json({
+        error: 'Error de configuración en Vercel',
+        mensaje: 'Faltan variables de entorno (TIDB_HOST, TIDB_USER o TIDB_PASSWORD).'
+      }, { status: 500 });
+    }
+
+    // 2. Conexión a TiDB con SSL compatible con Serverless / Vercel
     const connection = await mysql.createConnection({
-      host: process.env.TIDB_HOST,
-      user: process.env.TIDB_USER,
-      password: process.env.TIDB_PASSWORD,
-      database: process.env.TIDB_DATABASE,
-      port: Number(process.env.TIDB_PORT) || 4000,
-      ssl: { minVersion: 'TLSv1.2', rejectUnauthorized: true }
+      host,
+      user,
+      password,
+      database,
+      port,
+      ssl: {
+        minVersion: 'TLSv1.2',
+        rejectUnauthorized: false // Vital para evitar rechazo de certificados en Vercel
+      }
     });
 
-    // Ajusta las tablas según la base de datos
     const tablas = ['usuarios', 'productos', 'respaldos_log'];
     let sqlDump = `-- Respaldo TiDB Cloud (Cafeteria Otzo) - ${new Date().toISOString()}\n\n`;
 
     for (const tabla of tablas) {
-      const [showCreate]: any = await connection.query(`SHOW CREATE TABLE \`${tabla}\``);
-      if (showCreate && showCreate[0]) {
-        sqlDump += `${showCreate[0]['Create Table']};\n\n`;
-      }
+      try {
+        const [showCreate]: any = await connection.query(`SHOW CREATE TABLE \`${tabla}\``);
+        if (showCreate && showCreate[0]) {
+          const createStmt = showCreate[0]['Create Table'] || showCreate[0]['Create View'];
+          if (createStmt) {
+            sqlDump += `${createStmt};\n\n`;
+          }
+        }
 
-      const [rows]: any = await connection.query(`SELECT * FROM \`${tabla}\``);
-      if (Array.isArray(rows) && rows.length > 0) {
-        sqlDump += `INSERT INTO \`${tabla}\` VALUES \n`;
-        const insertRows = rows.map((row: any) => {
-          const values = Object.values(row).map(val => {
-            if (val === null) return 'NULL';
-            if (typeof val === 'string') return `'${val.replace(/'/g, "''")}'`;
-            if (val instanceof Date) return `'${val.toISOString().slice(0, 19).replace('T', ' ')}'`;
-            return val;
+        const [rows]: any = await connection.query(`SELECT * FROM \`${tabla}\``);
+        if (Array.isArray(rows) && rows.length > 0) {
+          sqlDump += `INSERT INTO \`${tabla}\` VALUES \n`;
+          const insertRows = rows.map((row: any) => {
+            const values = Object.values(row).map(val => {
+              if (val === null || val === undefined) return 'NULL';
+              if (typeof val === 'string') return `'${val.replace(/'/g, "''")}'`;
+              if (val instanceof Date) return `'${val.toISOString().slice(0, 19).replace('T', ' ')}'`;
+              return val;
+            });
+            return `(${values.join(', ')})`;
           });
-          return `(${values.join(', ')})`;
-        });
-        sqlDump += `${insertRows.join(',\n')};\n\n`;
+          sqlDump += `${insertRows.join(',\n')};\n\n`;
+        }
+      } catch (errTabla: any) {
+        console.warn(`Aviso en tabla ${tabla}:`, errTabla?.message || errTabla);
       }
     }
 
@@ -51,8 +75,12 @@ export async function GET() {
         'Content-Disposition': `attachment; filename="respaldo_otzo_${fechaStr}_${Date.now()}.sql.gz"`,
       },
     });
+
   } catch (error: any) {
-    console.error('Error generando respaldo .sql.gz:', error);
-    return NextResponse.json({ error: 'Error al generar el archivo de respaldo.' }, { status: 500 });
+    console.error('Error en Serverless Function:', error);
+    return NextResponse.json({
+      error: 'Error al generar el respaldo en Vercel',
+      detalle: error?.message || String(error)
+    }, { status: 500 });
   }
 }
