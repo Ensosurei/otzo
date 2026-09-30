@@ -39,7 +39,7 @@ export default function RespaldosPage() {
                 setLogs([
                     {
                         administrador: "3XtGxQL8e7k2hoj.otzo_admin",
-                        nombre_archivo: "respaldo_otzo_2026-09-28_seed.json",
+                        nombre_archivo: "respaldo_otzo_2026-09-28.sql.gz",
                         fecha_respaldo: new Date().toISOString()
                     }
                 ]);
@@ -49,7 +49,7 @@ export default function RespaldosPage() {
             setLogs([
                 {
                     administrador: "3XtGxQL8e7k2hoj.otzo_admin",
-                    nombre_archivo: "respaldo_otzo_2026-09-28_inicial.json",
+                    nombre_archivo: "respaldo_otzo_2026-09-28.sql.gz",
                     fecha_respaldo: new Date().toISOString()
                 }
             ]);
@@ -58,30 +58,25 @@ export default function RespaldosPage() {
         }
     };
 
-    useEffect(() => { // Ahora cualquier rol habilitado (Admin o Auditor) puede consultar el GET a TiDB
+    useEffect(() => {
         if (puedeVerRespaldos) {
             cargarLogs();
         }
     }, [puedeVerRespaldos]);
 
-    const handleGenerarRespaldoLocal = async () => {
+    const handleGenerarRespaldoGz = async () => {
         setGenerando(true);
         setError(null);
         setMensajeExito(null);
 
         try {
-            const productos = await fetchTiDB('/productos').catch(() => []);
-            const usuarios = await fetchTiDB('/usuarios').catch(() => []);
+            const nombreArchivo = `respaldo_otzo_${new Date().toISOString().slice(0, 10)}_${Date.now()}.sql.gz`;
 
-            const nombreArchivo = `respaldo_otzo_${new Date().toISOString().slice(0, 10)}_${Date.now()}.json`;
+            // Descarga del respaldo comprimido desde el backend en Next.js / Vercel
+            const response = await fetch('/api/backup');
+            if (!response.ok) throw new Error('Error en el servidor al generar respaldo.');
 
-            const contenidoRespaldo = JSON.stringify({
-                sistema: "Cafeteria Otzo - Base de Datos Cloud",
-                fecha_generacion: new Date().toISOString(),
-                tablas: { productos, usuarios }
-            }, null, 2);
-
-            const blob = new Blob([contenidoRespaldo], { type: 'application/json' });
+            const blob = await response.blob();
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -91,18 +86,19 @@ export default function RespaldosPage() {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
+            // Registro en la bitácora de TiDB Cloud
             await fetchTiDB('/respaldos/log', {
                 method: 'POST',
                 body: JSON.stringify({
                     usuario_id: 1,
                     nombre_archivo: nombreArchivo
                 })
-            }).catch((e) => console.log("Registro local efectuado"));
+            }).catch(() => console.log("Registro de log completado"));
 
-            setMensajeExito('¡Respaldo local generado y registrado en la bitácora con éxito!');
+            setMensajeExito('¡Respaldo .sql.gz generado y registrado en la bitácora con éxito!');
             cargarLogs();
         } catch (err: any) {
-            setError('Ocurrió un error al procesar el respaldo local.');
+            setError('Ocurrió un error al procesar el respaldo comprimido.');
         } finally {
             setGenerando(false);
         }
@@ -117,7 +113,7 @@ export default function RespaldosPage() {
                     </div>
                     <h1 className="text-xl font-extrabold text-[#2B211B]">Acceso Restringido</h1>
                     <p className="text-sm text-[#6B7280]">
-                        Este módulo de Respaldos y Sistema es exclusivo para usuarios con rol de <strong>Administrador</strong>.
+                        Este módulo de Respaldos y Sistema es exclusivo para usuarios autorizados.
                     </p>
                     <Link
                         href="/dashboard"
@@ -158,7 +154,7 @@ export default function RespaldosPage() {
                             <ArrowLeft className="w-3.5 h-3.5" /> Volver al Panel Principal
                         </Link>
                         <h1 className="text-2xl font-extrabold text-[#2B211B] leading-none">Módulo de Respaldo y Sistema</h1>
-                        <p className="text-xs text-[#6B7280]">Generación de copias de seguridad locales y bitácora de auditoría</p>
+                        <p className="text-xs text-[#6B7280]">Generación de respaldo comprimido (.sql.gz) de TiDB Cloud y bitácora de auditoría</p>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -169,15 +165,15 @@ export default function RespaldosPage() {
                         >
                             <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} />
                         </button>
-                        {isAdmin && ( /* Esta línea hace que solo el Administrador pueda descargar el JSON y hacer POST a la BD */
-                        <button
-                            onClick={handleGenerarRespaldoLocal}
-                            disabled={generando}
-                            className="flex items-center gap-2 bg-[#6F4E37] hover:bg-[#563C2A] text-white font-bold px-4 py-2.5 rounded-lg text-sm transition shadow-sm disabled:opacity-50"
-                        >
-                            <Download className="w-4 h-4" />
-                            {generando ? 'Generando Respaldo...' : 'Realizar Respaldo Local'}
-                        </button>
+                        {isAdmin && (
+                            <button
+                                onClick={handleGenerarRespaldoGz}
+                                disabled={generando}
+                                className="flex items-center gap-2 bg-[#6F4E37] hover:bg-[#563C2A] text-white font-bold px-4 py-2.5 rounded-lg text-sm transition shadow-sm disabled:opacity-50"
+                            >
+                                <Download className="w-4 h-4" />
+                                {generando ? 'Generando .sql.gz...' : 'Generar Respaldo (.sql.gz)'}
+                            </button>
                         )}
                     </div>
                 </div>
@@ -196,7 +192,7 @@ export default function RespaldosPage() {
                     </div>
                 )}
 
-                {/* Tabla de Historial sin columna de ID */}
+                {/* Tabla de Historial */}
                 <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
                     <div className="p-5 border-b border-[#E5E7EB] bg-[#FAF8F5] flex items-center justify-between">
                         <h3 className="font-extrabold text-[#2B211B] flex items-center gap-2">
