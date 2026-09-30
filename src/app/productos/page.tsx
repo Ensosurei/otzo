@@ -338,6 +338,7 @@ export default function ProductosPage() {
                       </td>
                       <td className="p-4 text-right">
                         {puedeEditarProductos ? (
+
                           <div className="flex justify-end gap-2">
                             <button
                               onClick={() => abrirEdicion(p)}

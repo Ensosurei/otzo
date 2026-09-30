@@ -6,7 +6,22 @@ import UserMenu from '@/components/UserMenu';
 import { usePermisos } from '@/lib/permisos';
 import { fetchTiDB } from '@/lib/tidb-client';
 import { Usuario, RolUsuario } from '@/types';
-import { UserPlus, CheckCircle2, XCircle, RefreshCw, Pencil, Trash2, X, Check, KeyRound, AlertCircle, Search, Filter, Coffee, ArrowLeft } from 'lucide-react';
+import {
+  UserPlus,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  Pencil,
+  Trash2,
+  X,
+  Check,
+  KeyRound,
+  AlertCircle,
+  Search,
+  Filter,
+  Coffee,
+  ArrowLeft,
+} from 'lucide-react';
 
 export default function UsuariosPage() {
   const { puedeEditarUsuarios, puedeVerUsuarios, cargado } = usePermisos();
@@ -342,8 +357,8 @@ export default function UsuariosPage() {
                           </span>
                         )}
                       </td>
-                      <td className="p-4 text-right">
-                        {puedeEditarUsuarios && (
+                      {puedeEditarUsuarios && (
+                        <td className="p-4 text-right">
                           <div className="flex justify-end gap-2">
                             <button
                               onClick={() => abrirEdicion(u)}
@@ -360,8 +375,8 @@ export default function UsuariosPage() {
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
-                          )}
                         </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -495,7 +510,7 @@ export default function UsuariosPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-[#2B211B] mb-1">Correo Electrónico</label>
+                <label className="block text-[#2B211B] text-xs font-bold mb-1">Correo Electrónico</label>
                 <input
                   type="email"
                   value={editCorreo}
