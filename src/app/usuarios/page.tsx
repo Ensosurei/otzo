@@ -2,11 +2,29 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
+import UserMenu from '@/components/UserMenu';
+import { usePermisos } from '@/lib/permisos';
 import { fetchTiDB } from '@/lib/tidb-client';
 import { Usuario, RolUsuario } from '@/types';
-import { UserPlus, CheckCircle2, XCircle, RefreshCw, Pencil, Trash2, X, Check, KeyRound, AlertCircle, Search, Filter, Coffee, ArrowLeft } from 'lucide-react';
+import {
+  UserPlus,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  Pencil,
+  Trash2,
+  X,
+  Check,
+  KeyRound,
+  AlertCircle,
+  Search,
+  Filter,
+  Coffee,
+  ArrowLeft,
+} from 'lucide-react';
 
 export default function UsuariosPage() {
+  const { puedeEditarUsuarios, puedeVerUsuarios, cargado } = usePermisos();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [cargando, setCargando] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +92,7 @@ export default function UsuariosPage() {
 
   const handleCrear = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!puedeEditarUsuarios) return;
     setErrorForm(null);
 
     if (!nombre.trim() || !correo.trim() || !username.trim() || !password.trim()) {
@@ -130,6 +149,7 @@ export default function UsuariosPage() {
 
   const handleActualizar = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!puedeEditarUsuarios) return;
     if (!usuarioEditando) return;
     setErrorEditForm(null);
 
@@ -176,6 +196,7 @@ export default function UsuariosPage() {
   };
 
   const handleEliminar = async (id: number | string, nombreUsuario: string) => {
+    if (!puedeEditarUsuarios) return;
     if (!confirm(`¿Estás seguro de eliminar a "${nombreUsuario}"?`)) return;
     try {
       await fetchTiDB(`/usuarios/${id}`, { method: 'DELETE' });
@@ -185,17 +206,39 @@ export default function UsuariosPage() {
     }
   };
 
+  if (cargado && !puedeVerUsuarios) {
+    return (
+      <div className="min-h-screen bg-[#F8F6F0] text-[#2B211B] flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-2xl shadow-xl border border-[#E5E7EB] text-center max-w-md w-full space-y-4">
+          <div className="w-16 h-16 bg-[#FEE2E2] text-[#EF4444] rounded-full flex items-center justify-center mx-auto">
+            <AlertCircle className="w-8 h-8" />
+          </div>
+          <h1 className="text-xl font-extrabold text-[#2B211B]">Acceso Restringido</h1>
+          <p className="text-sm text-[#6B7280]">
+            No cuentas con permisos para consultar la gestión de usuarios.
+          </p>
+          <Link
+            href="/dashboard"
+            className="inline-block w-full py-2.5 bg-[#6F4E37] text-white rounded-lg text-sm font-bold hover:bg-[#563C2A] transition"
+          >
+            Volver al Panel Principal
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F8F6F0] text-[#2B211B] font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Navbar Superior */}
       <header className="bg-[#2B211B] text-white shadow-md sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 text-xl font-extrabold text-[#F4EBE1] hover:opacity-90 transition">
+          <Link href="/dashboard" className="flex items-center gap-3 text-xl font-extrabold text-[#F4EBE1] hover:opacity-90 transition">
             <Coffee className="w-6 h-6 text-[#D2B48C]" />
             <span>Cafeteria Otzo</span>
           </Link>
           <div className="flex items-center gap-4 text-sm font-semibold text-[#D1D5DB]">
-            <span className="bg-white/10 px-3 py-1 rounded-full border border-white/10">Admin</span>
+            <UserMenu />
           </div>
         </div>
       </header>
@@ -206,7 +249,7 @@ export default function UsuariosPage() {
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div className="space-y-1">
             <Link
-              href="/"
+              href="/dashboard"
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#6B7280] hover:text-[#6F4E37] transition-colors mb-1"
               title="Volver al menú principal"
             >
@@ -224,12 +267,14 @@ export default function UsuariosPage() {
             >
               <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} />
             </button>
-            <button
-              onClick={() => setMostrarModalCrear(true)}
-              className="flex items-center gap-2 bg-[#6F4E37] hover:bg-[#563C2A] text-white font-bold px-4 py-2.5 rounded-lg text-sm transition shadow-sm"
-            >
-              <UserPlus className="w-4 h-4" /> Añadir Usuario
-            </button>
+            {puedeEditarUsuarios && (
+              <button
+                onClick={() => setMostrarModalCrear(true)}
+                className="flex items-center gap-2 bg-[#6F4E37] hover:bg-[#563C2A] text-white font-bold px-4 py-2.5 rounded-lg text-sm transition shadow-sm"
+              >
+                <UserPlus className="w-4 h-4" /> Añadir Usuario
+              </button>
+            )}
           </div>
         </div>
 
@@ -285,7 +330,7 @@ export default function UsuariosPage() {
                     <th className="p-4">Contacto</th>
                     <th className="p-4">Rol</th>
                     <th className="p-4">Estado</th>
-                    <th className="p-4 text-right">Acciones</th>
+                    {puedeEditarUsuarios && <th className="p-4 text-right">Acciones</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E5E7EB] text-sm">
@@ -312,24 +357,26 @@ export default function UsuariosPage() {
                           </span>
                         )}
                       </td>
-                      <td className="p-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => abrirEdicion(u)}
-                            className="p-2 rounded-lg bg-[#F4EBE1] text-[#6F4E37] hover:bg-[#6F4E37] hover:text-white transition"
-                            title="Editar"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleEliminar(u.id, u.nombre)}
-                            className="p-2 rounded-lg bg-[#FEE2E2] text-[#EF4444] hover:bg-[#EF4444] hover:text-white transition"
-                            title="Eliminar"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
+                      {puedeEditarUsuarios && (
+                        <td className="p-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => abrirEdicion(u)}
+                              className="p-2 rounded-lg bg-[#F4EBE1] text-[#6F4E37] hover:bg-[#6F4E37] hover:text-white transition"
+                              title="Editar"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleEliminar(u.id, u.nombre)}
+                              className="p-2 rounded-lg bg-[#FEE2E2] text-[#EF4444] hover:bg-[#EF4444] hover:text-white transition"
+                              title="Eliminar"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -463,7 +510,7 @@ export default function UsuariosPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-[#2B211B] mb-1">Correo Electrónico</label>
+                <label className="block text-[#2B211B] text-xs font-bold mb-1">Correo Electrónico</label>
                 <input
                   type="email"
                   value={editCorreo}

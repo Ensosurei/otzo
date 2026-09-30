@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import UserMenu from '@/components/UserMenu';
+import { usePermisos } from '@/lib/permisos';
 import { fetchTiDB } from '@/lib/tidb-client';
 import { Database, Download, RefreshCw, AlertCircle, ShieldAlert, CheckCircle2, Coffee, ArrowLeft, Clock, User } from 'lucide-react';
 
@@ -14,7 +16,7 @@ interface RespaldoLog {
 }
 
 export default function RespaldosPage() {
-    const [isAdmin, setIsAdmin] = useState<boolean>(true);
+    const { esAdmin: isAdmin, puedeVerRespaldos, cargado } = usePermisos();
     const [logs, setLogs] = useState<RespaldoLog[]>([]);
     const [cargando, setCargando] = useState<boolean>(true);
     const [generando, setGenerando] = useState<boolean>(false);
@@ -56,11 +58,11 @@ export default function RespaldosPage() {
         }
     };
 
-    useEffect(() => {
-        if (isAdmin) {
+    useEffect(() => { // Ahora cualquier rol habilitado (Admin o Auditor) puede consultar el GET a TiDB
+        if (puedeVerRespaldos) {
             cargarLogs();
         }
-    }, [isAdmin]);
+    }, [puedeVerRespaldos]);
 
     const handleGenerarRespaldoLocal = async () => {
         setGenerando(true);
@@ -106,7 +108,7 @@ export default function RespaldosPage() {
         }
     };
 
-    if (!isAdmin) {
+    if (cargado && !puedeVerRespaldos) {
         return (
             <div className="min-h-screen bg-[#F8F6F0] text-[#2B211B] flex items-center justify-center p-4 font-['Plus_Jakarta_Sans',sans-serif]">
                 <div className="bg-white p-8 rounded-2xl shadow-xl border border-[#E5E7EB] text-center max-w-md w-full space-y-4">
@@ -118,7 +120,7 @@ export default function RespaldosPage() {
                         Este módulo de Respaldos y Sistema es exclusivo para usuarios con rol de <strong>Administrador</strong>.
                     </p>
                     <Link
-                        href="/"
+                        href="/dashboard"
                         className="inline-block w-full py-2.5 bg-[#6F4E37] text-white rounded-lg text-sm font-bold hover:bg-[#563C2A] transition"
                     >
                         Volver al Inicio
@@ -133,12 +135,12 @@ export default function RespaldosPage() {
             {/* Navbar Superior */}
             <header className="bg-[#2B211B] text-white shadow-md sticky top-0 z-30">
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-3 text-xl font-extrabold text-[#F4EBE1] hover:opacity-90 transition">
+                    <Link href="/dashboard" className="flex items-center gap-3 text-xl font-extrabold text-[#F4EBE1] hover:opacity-90 transition">
                         <Coffee className="w-6 h-6 text-[#D2B48C]" />
                         <span>Cafeteria Otzo</span>
                     </Link>
                     <div className="flex items-center gap-4 text-sm font-semibold text-[#D1D5DB]">
-                        <span className="bg-white/10 px-3 py-1 rounded-full border border-white/10">Admin</span>
+                        <UserMenu />
                     </div>
                 </div>
             </header>
@@ -149,7 +151,7 @@ export default function RespaldosPage() {
                 <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                     <div className="space-y-1">
                         <Link
-                            href="/"
+                            href="/dashboard"
                             className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#6B7280] hover:text-[#6F4E37] transition-colors mb-1"
                             title="Volver al menú principal"
                         >
@@ -167,6 +169,7 @@ export default function RespaldosPage() {
                         >
                             <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} />
                         </button>
+                        {isAdmin && ( /* Esta línea hace que solo el Administrador pueda descargar el JSON y hacer POST a la BD */
                         <button
                             onClick={handleGenerarRespaldoLocal}
                             disabled={generando}
@@ -175,6 +178,7 @@ export default function RespaldosPage() {
                             <Download className="w-4 h-4" />
                             {generando ? 'Generando Respaldo...' : 'Realizar Respaldo Local'}
                         </button>
+                        )}
                     </div>
                 </div>
 

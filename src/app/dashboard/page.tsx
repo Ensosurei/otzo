@@ -1,9 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import UserMenu from '@/components/UserMenu';
+import { usePermisos } from '@/lib/permisos';
 import { Users, Package, Database, ArrowRight, Coffee } from 'lucide-react';
 
 export default function HomePage() {
+  const { puedeVerUsuarios, puedeVerProductos, puedeVerRespaldos, cargado } = usePermisos();
+
   const modulos = [
     {
       titulo: 'Gestión de Usuarios',
@@ -12,6 +16,7 @@ export default function HomePage() {
       ruta: '/usuarios',
       badge: 'Disponible',
       colorBadge: 'bg-[#D1FAE5] text-[#065F46]',
+      visible: puedeVerUsuarios,
     },
     {
       titulo: 'Catálogo de Productos',
@@ -20,6 +25,7 @@ export default function HomePage() {
       ruta: '/productos',
       badge: 'Disponible',
       colorBadge: 'bg-[#D1FAE5] text-[#065F46]',
+      visible: puedeVerProductos,
     },
     {
       titulo: 'Respaldos y Sistema',
@@ -28,8 +34,13 @@ export default function HomePage() {
       ruta: '/respaldos',
       badge: 'Disponible',
       colorBadge: 'bg-[#D1FAE5] text-[#065F46]',
+      visible: puedeVerRespaldos,
     },
   ];
+
+  if (!cargado) {
+    return <div className="min-h-screen bg-[#F8F6F0] flex items-center justify-center">Verificando accesos...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F6F0] text-[#2B211B] font-['Plus_Jakarta_Sans',sans-serif] flex flex-col">
@@ -41,7 +52,7 @@ export default function HomePage() {
             <span>Cafeteria Otzo</span>
           </div>
           <div className="flex items-center gap-4 text-sm font-semibold text-[#D1D5DB]">
-            <span className="bg-white/10 px-3 py-1 rounded-full border border-white/10">Admin</span>
+            <UserMenu />
           </div>
         </div>
       </header>
@@ -61,7 +72,9 @@ export default function HomePage() {
 
           {/* Tarjetas de Módulos */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {modulos.map((m, idx) => {
+            {modulos
+            .filter((m) => m.visible)
+            .map((m, idx) => {
               const Icono = m.icono;
               return (
                 <div
