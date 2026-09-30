@@ -118,7 +118,37 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await response.json();
-    return NextResponse.json(data.data?.rows || data);
+    const result = data.data?.rows || data;
+    const apiResponse = NextResponse.json(result);
+
+    if (cleanEndpoint.split('?')[0] === '/auth/login' && method.toUpperCase() === 'POST') {
+      const loginUser = Array.isArray(result) ? result[0] : undefined;
+      const userId = Number(loginUser?.id);
+
+      if (Number.isSafeInteger(userId) && userId > 0) {
+        const expiresAt = Date.now() + 8 * 60 * 60 * 1000;
+        const payload = Buffer.from(JSON.stringify({ userId, expiresAt })).toString('base64url');
+        const signature = crypto.createHmac('sha256', privateKey).update(payload).digest('base64url');
+
+        apiResponse.cookies.set('otzo_session', `${payload}.${signature}`, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          path: '/',
+          maxAge: 8 * 60 * 60,
+        });
+      } else {
+        apiResponse.cookies.set('otzo_session', '', {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          path: '/',
+          maxAge: 0,
+        });
+      }
+    }
+
+    return apiResponse;
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Error interno del servidor' },

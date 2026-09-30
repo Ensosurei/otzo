@@ -36,6 +36,7 @@ export default function UserMenu() {
   }, []);
 
   const cerrarSesion = (): void => {
+    void window.fetch('/api/session', { method: 'DELETE', keepalive: true }).catch(() => undefined);
     localStorage.removeItem('usuario_otzo');
     setAbierto(false);
     router.push('/');

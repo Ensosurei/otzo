@@ -33,26 +33,11 @@ export default function RespaldosPage() {
                 ? response
                 : response?.data || response?.results || [];
 
-            if (lista.length > 0) {
-                setLogs(lista);
-            } else {
-                setLogs([
-                    {
-                        administrador: "3XtGxQL8e7k2hoj.otzo_admin",
-                        nombre_archivo: "respaldo_otzo_2026-09-28_seed.json",
-                        fecha_respaldo: new Date().toISOString()
-                    }
-                ]);
-            }
+            setLogs(Array.isArray(lista) ? lista : []);
         } catch (err: any) {
             console.error("Aviso de conexión con TiDB:", err);
-            setLogs([
-                {
-                    administrador: "3XtGxQL8e7k2hoj.otzo_admin",
-                    nombre_archivo: "respaldo_otzo_2026-09-28_inicial.json",
-                    fecha_respaldo: new Date().toISOString()
-                }
-            ]);
+            setLogs([]);
+            setError('No fue posible cargar la bitácora de respaldos.');
         } finally {
             setCargando(false);
         }
@@ -64,24 +49,28 @@ export default function RespaldosPage() {
         }
     }, [puedeVerRespaldos]);
 
-    const handleGenerarRespaldoLocal = async () => {
+    const handleGenerarRespaldo = async () => {
         setGenerando(true);
         setError(null);
         setMensajeExito(null);
 
         try {
-            const productos = await fetchTiDB('/productos').catch(() => []);
-            const usuarios = await fetchTiDB('/usuarios').catch(() => []);
+            const respuesta = await window.fetch('/api/respaldo', {
+                method: 'POST',
+                credentials: 'same-origin',
+            });
 
-            const nombreArchivo = `respaldo_otzo_${new Date().toISOString().slice(0, 10)}_${Date.now()}.json`;
+            if (!respuesta.ok) {
+                const detalle = await respuesta.json().catch(() => null);
+                throw new Error(detalle?.error || 'No fue posible generar el respaldo.');
+            }
 
-            const contenidoRespaldo = JSON.stringify({
-                sistema: "Cafeteria Otzo - Base de Datos Cloud",
-                fecha_generacion: new Date().toISOString(),
-                tablas: { productos, usuarios }
-            }, null, 2);
-
-            const blob = new Blob([contenidoRespaldo], { type: 'application/json' });
+            const blob = await respuesta.blob();
+            const nombreDesdeServidor = respuesta.headers
+                .get('Content-Disposition')
+                ?.match(/filename="([^"]+)"/i)?.[1];
+            const nombreArchivo = nombreDesdeServidor ||
+                `respaldo_otzo_${new Date().toISOString().slice(0, 10)}_${Date.now()}.sql.gz`;
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -89,20 +78,41 @@ export default function RespaldosPage() {
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-            await fetchTiDB('/respaldos/log', {
-                method: 'POST',
-                body: JSON.stringify({
-                    usuario_id: 1,
-                    nombre_archivo: nombreArchivo
-                })
-            }).catch((e) => console.log("Registro local efectuado"));
+            let usuarioId: number | undefined;
+            try {
+                const usuarioGuardado = localStorage.getItem('usuario_otzo');
+                const usuarioSesion = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
+                if (Number.isSafeInteger(Number(usuarioSesion?.id)) && Number(usuarioSesion.id) > 0) {
+                    usuarioId = Number(usuarioSesion.id);
+                }
+            } catch {
+                usuarioId = undefined;
+            }
+            if (!usuarioId) {
+                setError('El respaldo se descargó, pero no se pudo identificar al administrador para registrar la acción.');
+                return;
+            }
 
-            setMensajeExito('¡Respaldo local generado y registrado en la bitácora con éxito!');
-            cargarLogs();
+            try {
+                await fetchTiDB('/respaldos/log', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        usuario_id: usuarioId,
+                        nombre_archivo: nombreArchivo
+                    })
+                });
+            } catch (logError) {
+                console.error('No se pudo registrar el respaldo en la bitácora:', logError);
+                setError('El respaldo se descargó, pero no fue posible registrar la acción en la bitácora.');
+                return;
+            }
+
+            setMensajeExito('El respaldo de la base de datos se descargó y quedó registrado en la bitácora.');
+            await cargarLogs();
         } catch (err: any) {
-            setError('Ocurrió un error al procesar el respaldo local.');
+            setError(err.message || 'Ocurrió un error al generar el respaldo de la base de datos.');
         } finally {
             setGenerando(false);
         }
@@ -158,7 +168,7 @@ export default function RespaldosPage() {
                             <ArrowLeft className="w-3.5 h-3.5" /> Volver al Panel Principal
                         </Link>
                         <h1 className="text-2xl font-extrabold text-[#2B211B] leading-none">Módulo de Respaldo y Sistema</h1>
-                        <p className="text-xs text-[#6B7280]">Generación de copias de seguridad locales y bitácora de auditoría</p>
+                        <p className="text-xs text-[#6B7280]">Descarga comprimida de la base de datos y bitácora de auditoría</p>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -169,14 +179,14 @@ export default function RespaldosPage() {
                         >
                             <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} />
                         </button>
-                        {isAdmin && ( /* Esta línea hace que solo el Administrador pueda descargar el JSON y hacer POST a la BD */
+                        {isAdmin && (
                         <button
-                            onClick={handleGenerarRespaldoLocal}
+                            onClick={handleGenerarRespaldo}
                             disabled={generando}
                             className="flex items-center gap-2 bg-[#6F4E37] hover:bg-[#563C2A] text-white font-bold px-4 py-2.5 rounded-lg text-sm transition shadow-sm disabled:opacity-50"
                         >
                             <Download className="w-4 h-4" />
-                            {generando ? 'Generando Respaldo...' : 'Realizar Respaldo Local'}
+                            {generando ? 'Generando Respaldo...' : 'Descargar Respaldo'}
                         </button>
                         )}
                     </div>

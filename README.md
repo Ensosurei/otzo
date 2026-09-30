@@ -14,7 +14,7 @@ Actualmente estamos construyendo los módulos principales del sistema bajo la mi
 
 - [x] **Gestión de Usuarios:** CRUD completo (creación en modal, edición, eliminación), búsqueda en tiempo real (por nombre, `@username` o correo) y filtrado por roles.
 - [x] **Catálogo de Productos:** En maquetación e integración.
-- [x] **Respaldos y Sistema:** Pendiente de desarrollo.
+- [x] **Respaldos y Sistema:** Volcado completo de TiDB en `.sql.gz` con bitácora de auditoría.
 - [ ] **Login**
 
 ---
@@ -34,7 +34,8 @@ Si deseas clonar y probar el avance del proyecto localmente:
    Crea un archivo `.env.local` en la raíz con las credenciales de tu API / TiDB Cloud:  
    `TIDB_DATA_APP_URL=tu_endpoint_aqui`  
    `TIDB_PUBLIC_KEY=tu_public_key_aqui`  
-   `TIDB_PRIVATE_KEY=tu_private_key_aqui`
+   `TIDB_PRIVATE_KEY=tu_private_key_aqui`  
+   También configura `TIDB_DB_HOST`, `TIDB_DB_USER`, `TIDB_DB_PASSWORD`, `TIDB_DB_NAME` y `TIDB_DB_PORT` para habilitar el respaldo completo `.sql.gz` por conexión TLS directa.
 
 4. **Ejecutar el servidor local:**  
    `npm run dev`  
