@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
+import bcrypt from 'bcryptjs';
 import UserMenu from '@/components/UserMenu';
 import { usePermisos } from '@/lib/permisos';
 import { fetchTiDB } from '@/lib/tidb-client';
@@ -112,13 +113,17 @@ export default function UsuariosPage() {
 
     setGuardando(true);
     try {
+      // Encriptación de la contraseña con bcrypt antes de enviar a TiDB
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
       await fetchTiDB('/usuarios', {
         method: 'POST',
         body: JSON.stringify({
           nombre: nombre.trim(),
           correo: correo.trim(),
           username: username.trim(),
-          password,
+          password: hashedPassword,
           rol,
           estado: 'Activo',
         }),
@@ -179,7 +184,9 @@ export default function UsuariosPage() {
       };
 
       if (editPassword.trim() !== '') {
-        bodyData.password = editPassword;
+        // Encriptar la nueva contraseña en caso de que se haya modificado
+        const salt = await bcrypt.genSalt(10);
+        bodyData.password = await bcrypt.hash(editPassword, salt);
       }
 
       await fetchTiDB(`/usuarios/${usuarioEditando.id}`, {

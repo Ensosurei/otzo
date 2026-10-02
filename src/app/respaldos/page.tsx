@@ -38,7 +38,7 @@ export default function RespaldosPage() {
             } else {
                 setLogs([
                     {
-                        administrador: "3XtGxQL8e7k2hoj.otzo_admin",
+                        administrador: "Sistema Otzo",
                         nombre_archivo: "respaldo_otzo_2026-09-28.sql.gz",
                         fecha_respaldo: new Date().toISOString()
                     }
@@ -46,13 +46,7 @@ export default function RespaldosPage() {
             }
         } catch (err: any) {
             console.error("Aviso de conexión con TiDB:", err);
-            setLogs([
-                {
-                    administrador: "3XtGxQL8e7k2hoj.otzo_admin",
-                    nombre_archivo: "respaldo_otzo_2026-09-28.sql.gz",
-                    fecha_respaldo: new Date().toISOString()
-                }
-            ]);
+            setLogs([]);
         } finally {
             setCargando(false);
         }
@@ -72,7 +66,7 @@ export default function RespaldosPage() {
         try {
             const nombreArchivo = `respaldo_otzo_${new Date().toISOString().slice(0, 10)}_${Date.now()}.sql.gz`;
 
-            // Descarga del respaldo comprimido desde el backend en Next.js / Vercel
+            // Descarga del respaldo comprimido desde el backend en Next.js
             const response = await fetch('/api/backup');
             if (!response.ok) throw new Error('Error en el servidor al generar respaldo.');
 
@@ -86,11 +80,16 @@ export default function RespaldosPage() {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            // Registro en la bitácora de TiDB Cloud
+            // Obtener el usuario autenticado actualmente desde localStorage
+            const sesionStr = localStorage.getItem('usuario_otzo');
+            const usuarioSesion = sesionStr ? JSON.parse(sesionStr) : null;
+
+            // Registro dinámico en la bitácora con el ID y nombre del usuario logueado
             await fetchTiDB('/respaldos/log', {
                 method: 'POST',
                 body: JSON.stringify({
-                    usuario_id: 1,
+                    usuario_id: usuarioSesion?.id || 1,
+                    administrador: usuarioSesion?.nombre || 'Administrador',
                     nombre_archivo: nombreArchivo
                 })
             }).catch(() => console.log("Registro de log completado"));

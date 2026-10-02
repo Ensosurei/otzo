@@ -3,7 +3,7 @@
 import React, { useState, FormEvent, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Coffee, Mail, Lock, LogIn, AlertCircle } from 'lucide-react';
-import { fetchTiDB } from '@/lib/tidb-client'; // <--- Importamos el cliente oficial de TiDB del proyecto
+import { fetchTiDB } from '@/lib/tidb-client';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,8 +21,7 @@ export default function LoginPage() {
     try {
       const identificador = email.trim();
 
-      // Paso 1: el SQL de /auth/login solo compara contra "username",
-      // así que si el usuario escribió un correo, buscamos su username real.
+      // Paso 1: Buscamos el usuario por correo o username
       const usuarios = await fetchTiDB<any[]>('/usuarios');
       const encontrado = Array.isArray(usuarios)
         ? usuarios.find(
@@ -42,17 +41,16 @@ export default function LoginPage() {
         return;
       }
 
-      // Paso 2: login con el username resuelto (sin tocar el SQL)
+      // Paso 2: Intentamos autenticar con 'password'
       const data = await fetchTiDB<any[]>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({
           username: encontrado.username,
-          password_hash: password,
+          password: password, // <--- Ajustado a 'password'
         }),
       });
 
       if (Array.isArray(data) && data.length > 0) {
-        // Guardamos la sesión requerida para el control de roles (RBAC)
         localStorage.setItem('usuario_otzo', JSON.stringify(data[0]));
         router.push('/dashboard');
       } else {
